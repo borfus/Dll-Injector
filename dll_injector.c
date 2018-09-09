@@ -2,28 +2,30 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
+DWORD search_process_list_for_pid(HANDLE process_list_snapshot)
+{
+	// must initialize dwSize to struct or Process32First will fail
+	PROCESSENTRY32 current_process_in_list = { .dwSize = sizeof(PROCESSENTRY32) };
+
+	if (Process32First(process_list_snapshot, &current_process_in_list))
+	{
+		do
+		{
+			if (!strcmp(current_process_in_list.szExeFile, process_name))
+			{
+				return current_process_in_list.th32ProcessID;
+			}
+		} while (Process32Next(process_list_snapshot, &current_process_in_list));
+	}
+}
+
 DWORD get_pid(char *process_name)
 {
-	// From msdn: "Before calling the Process32First function, set this member to sizeof(PROCESSENTRY32).
-	// If you do not initialize dwSize, Process32First will fail."
-	PROCESSENTRY32 ProcEntry = { .dwSize = sizeof(PROCESSENTRY32) };
-
-	HANDLE handle = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-	if (handle != NULL)
+	HANDLE process_list_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (process_list_snapshot != NULL)
 	{
-		if (Process32First(handle, &ProcEntry))
-		{
-			do
-			{
-				if (!strcmp(ProcEntry.szExeFile, process_name))
-				{
-					return ProcEntry.th32ProcessID;
-				}
-			} while (Process32Next(handle, &ProcEntry));
-		}
+		return search_process_list_for_pid(process_list_snapshot);
 	}
-	return 0;
 }
 
 int main()
