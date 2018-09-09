@@ -17,6 +17,7 @@ DWORD search_process_list_for_pid(HANDLE process_list_snapshot)
 			}
 		} while (Process32Next(process_list_snapshot, &current_process_in_list));
 	}
+	return 0;
 }
 
 DWORD get_pid(char *process_name)
@@ -26,6 +27,7 @@ DWORD get_pid(char *process_name)
 	{
 		return search_process_list_for_pid(process_list_snapshot);
 	}
+	return 0;
 }
 
 int main()
