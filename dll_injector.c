@@ -26,8 +26,7 @@ DWORD get_pid(char *process_name) {
 	return 0;
 }
 
-void inject_dll(DWORD pid, char *dll)
-{
+void inject_dll(DWORD pid, char *dll) {
 	HANDLE process = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
 	if (process == INVALID_HANDLE_VALUE) {
 		printf("Failed to open PID %d, error code %d", pid, GetLastError());
@@ -53,18 +52,39 @@ void inject_dll(DWORD pid, char *dll)
 	CloseHandle(thread);
 }
 
-int main()
-{
-	char process[256], dll_path[256];
-	printf("Process name: ");
-	scanf("%s", process);
-	printf("DLL path: ");
-	scanf("%s", dll_path);
+char* open_dll_file() {
+	OPENFILENAME open_file_dialog;
+	ZeroMemory(&open_file_dialog, sizeof(OPENFILENAME));
+	char file_name[256] = { 0 };
 
+	open_file_dialog.lStructSize = sizeof(OPENFILENAME);
+	open_file_dialog.lpstrFile = file_name;
+	open_file_dialog.lpstrFile[0] = '\0';
+	open_file_dialog.nMaxFile = 256;
+	open_file_dialog.lpstrTitle = "Choose a DLL to inject:";
+	open_file_dialog.lpstrFilter = "All Files\0*.*\0DLL Files\0*.dll\0";
+	open_file_dialog.nFilterIndex = 2; // choose 'DLL Files' by default
+
+	GetOpenFileName(&open_file_dialog);
+
+	return file_name;
+}
+
+int main(int argc, char *argv[]) {
+	char process[256], dll_path[256];
+
+	if (argc == 1) {
+		printf("Process name: ");
+		scanf("%s", process);
+		strcpy(dll_path, open_dll_file());
+	} else if (argc == 3) {
+		strcpy(process, argv[1]);
+		strcpy(dll_path, argv[2]);
+	}
+	
 	DWORD pid = get_pid(process);
 
-	if (pid)
-	{
+	if (pid) {
 		printf("PID: %d\n", pid);
 		inject_dll(pid, dll_path);
 	}
